@@ -16,14 +16,16 @@ BANDEIRAS = {
 
 def buscar_cotacoes():
     resultado = {}
-    for moeda in MOEDAS:
-        for tentativa in range(3):
-            try:
-                url = f"https://economia.awesomeapi.com.br/json/last/{moeda}-BRL"
-                resposta = requests.get(url, timeout=10)
-                resposta.raise_for_status()
-                dados = resposta.json()
-                chave = f"{moeda}BRL"
+    try:
+        pares = ",".join([f"{moeda}-BRL" for moeda in MOEDAS])
+        url = f"https://economia.awesomeapi.com.br/json/last/{pares}"
+        resposta = requests.get(url, timeout=10)
+        resposta.raise_for_status()
+        dados = resposta.json()
+
+        for moeda in MOEDAS:
+            chave = f"{moeda}BRL"
+            if chave in dados:
                 item = dados[chave]
                 resultado[moeda] = {
                     "valor": float(item["bid"]),
@@ -32,10 +34,11 @@ def buscar_cotacoes():
                     "baixa": float(item["low"]),
                     "hora": item["create_date"]
                 }
-                break
-            except Exception as e:
-                if tentativa == 2:
-                    resultado[moeda] = {"erro": str(e)}
+            else:
+                resultado[moeda] = {"erro": "Moeda não encontrada"}
+    except Exception as e:
+        for moeda in MOEDAS:
+            resultado[moeda] = {"erro": str(e)}
     return resultado
 
 @app.route("/")
