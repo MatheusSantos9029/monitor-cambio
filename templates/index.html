@@ -10,7 +10,13 @@
 </head>
 <body>
     <h1>💱 Monitor de Câmbio</h1>
-    <p class="subtitulo">Atualização automática a cada 30 segundos</p>
+    <p class="subtitulo">Atualização automática a cada
+    <select id="intervalo" onchange="alterarIntervalo()">
+        <option value="30000">30 segundos</option>
+        <option value="60000">1 minuto</option>
+        <option value="300000">5 minutos</option>
+    </select>
+    </p>
 
     <div class="cards">
         {% for moeda, dados in cotacoes.items() %}
@@ -121,8 +127,16 @@
             }
         }
 
-        atualizar();
-        setInterval(atualizar, 30000);
+        let intervaloAtual;
+
+function alterarIntervalo() {
+    const valor = parseInt(document.getElementById('intervalo').value);
+    clearInterval(intervaloAtual);
+    intervaloAtual = setInterval(atualizar, valor);
+}
+
+atualizar();
+intervaloAtual = setInterval(atualizar, 30000);
     </script>
 </body>
 </html>

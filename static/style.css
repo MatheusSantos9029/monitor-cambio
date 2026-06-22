@@ -101,3 +101,13 @@ h1 {
     border-radius: 3px;
     margin-right: 6px;
 }
+
+#intervalo {
+    background-color: #1e2130;
+    color: #e0e0e0;
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
