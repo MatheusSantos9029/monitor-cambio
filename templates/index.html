@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor de Câmbio</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>💱 Monitor de Câmbio</h1>
+    <p class="subtitulo">Atualização automática a cada 30 segundos</p>
+
+    <div class="cards">
+        {% for moeda, dados in cotacoes.items() %}
+        <div class="card" id="card-{{ moeda }}">
+            <h2>{{ moeda }} → BRL</h2>
+            {% if dados.get('erro') %}
+                <p class="erro">Erro ao carregar</p>
+            {% else %}
+                <p class="valor">R$ {{ "%.4f"|format(dados.valor) }}</p>
+                <p class="variacao {{ 'positivo' if dados.variacao >= 0 else 'negativo' }}">
+                    {{ "▲" if dados.variacao >= 0 else "▼" }}
+                    {{ "%.2f"|format(dados.variacao) }}%
+                </p>
+                <p class="detalhe">Alta: R$ {{ "%.4f"|format(dados.alta) }}</p>
+                <p class="detalhe">Baixa: R$ {{ "%.4f"|format(dados.baixa) }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="grafico-container">
+        <h2>Flutuação em tempo real</h2>
+        <canvas id="grafico"></canvas>
+    </div>
+
+    <p class="hora" id="hora">Carregando...</p>
+
+    <script>
+        const ctx = document.getElementById('grafico').getContext('2d');
+        const grafico = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'USD → BRL',
+                        data: [],
+                        borderColor: '#3498db',
+                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    },
+                    {
+                        label: 'EUR → BRL',
+                        data: [],
+                        borderColor: '#e74c3c',
+                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                scales: {
+                    y: { beginAtZero: false }
+                }
+            }
+        });
+
+        function atualizarHora() {
+            const agora = new Date();
+            document.getElementById('hora').textContent =
+                `Atualizado às ${agora.toLocaleTimeString('pt-BR')}`;
+        }
+
+        async function atualizar() {
+            try {
+                const resposta = await fetch('/api/cotacoes');
+                const dados = await resposta.json();
+                const agora = new Date().toLocaleTimeString('pt-BR');
+
+                if (grafico.data.labels.length > 20) {
+                    grafico.data.labels.shift();
+                    grafico.data.datasets[0].data.shift();
+                    grafico.data.datasets[1].data.shift();
+                }
+
+                grafico.data.labels.push(agora);
+                grafico.data.datasets[0].data.push(dados.USD?.valor);
+                grafico.data.datasets[1].data.push(dados.EUR?.valor);
+                grafico.update();
+
+                // Atualiza cards
+                for (const [moeda, info] of Object.entries(dados)) {
+                    const card = document.getElementById(`card-${moeda}`);
+                    if (card && info.valor) {
+                        card.querySelector('.valor').textContent = `R$ ${info.valor.toFixed(4)}`;
+                        const varEl = card.querySelector('.variacao');
+                        varEl.textContent = `${info.variacao >= 0 ? '▲' : '▼'} ${Math.abs(info.variacao).toFixed(2)}%`;
+                        varEl.className = `variacao ${info.variacao >= 0 ? 'positivo' : 'negativo'}`;
+                    }
+                }
+
+                atualizarHora();
+            } catch (e) {
+                console.error('Erro ao atualizar:', e);
+            }
+        }
+
+        atualizar();
+        setInterval(atualizar, 30000);
+    </script>
+</body>
+</html>
