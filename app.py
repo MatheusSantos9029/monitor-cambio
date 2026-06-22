@@ -47,5 +47,14 @@ def index():
 def api_cotacoes():
     return jsonify(buscar_cotacoes())
 
+@app.route("/teste")
+def teste():
+    try:
+        url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+        resposta = requests.get(url, timeout=10)
+        return jsonify({"status": resposta.status_code, "dados": resposta.json()})
+    except Exception as e:
+        return jsonify({"erro": str(e)})
+
 if __name__ == "__main__":
     app.run(debug=True)
