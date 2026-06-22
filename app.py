@@ -17,22 +17,21 @@ BANDEIRAS = {
 def buscar_cotacoes():
     resultado = {}
     try:
-        pares = ",".join([f"{moeda}-BRL" for moeda in MOEDAS])
-        url = f"https://economia.awesomeapi.com.br/json/last/{pares}"
+        url = "https://open.er-api.com/v6/latest/BRL"
         resposta = requests.get(url, timeout=10)
         resposta.raise_for_status()
         dados = resposta.json()
+        taxas = dados.get("rates", {})
 
         for moeda in MOEDAS:
-            chave = f"{moeda}BRL"
-            if chave in dados:
-                item = dados[chave]
+            if moeda in taxas:
+                valor = 1 / taxas[moeda]
                 resultado[moeda] = {
-                    "valor": float(item["bid"]),
-                    "variacao": float(item["pctChange"]),
-                    "alta": float(item["high"]),
-                    "baixa": float(item["low"]),
-                    "hora": item["create_date"]
+                    "valor": valor,
+                    "variacao": 0.0,
+                    "alta": valor,
+                    "baixa": valor,
+                    "hora": dados.get("time_last_update_utc", "")
                 }
             else:
                 resultado[moeda] = {"erro": "Moeda não encontrada"}
