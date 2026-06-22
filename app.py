@@ -3,7 +3,7 @@ import requests
 
 app = Flask(__name__)
 
-MOEDAS = ["USD", "EUR"]
+MOEDAS = ["USD", "EUR", "BTC", "GBP", "JPY", "ARS"]
 
 def buscar_cotacoes():
     resultado = {}
