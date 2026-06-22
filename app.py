@@ -5,6 +5,15 @@ app = Flask(__name__)
 
 MOEDAS = ["USD", "EUR", "BTC", "GBP", "JPY", "ARS"]
 
+BANDEIRAS = {
+    "USD": "us",
+    "EUR": "eu",
+    "BTC": "btc",
+    "GBP": "gb",
+    "JPY": "jp",
+    "ARS": "ar"
+}
+
 def buscar_cotacoes():
     resultado = {}
     for moeda in MOEDAS:
@@ -28,7 +37,7 @@ def buscar_cotacoes():
 @app.route("/")
 def index():
     cotacoes = buscar_cotacoes()
-    return render_template("index.html", cotacoes=cotacoes)
+    return render_template("index.html", cotacoes=cotacoes, bandeiras=BANDEIRAS)
 
 @app.route("/api/cotacoes")
 def api_cotacoes():

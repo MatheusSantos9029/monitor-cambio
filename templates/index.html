@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitor de Câmbio</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -14,7 +15,14 @@
     <div class="cards">
         {% for moeda, dados in cotacoes.items() %}
         <div class="card" id="card-{{ moeda }}">
-            <h2>{{ moeda }} → BRL</h2>
+            <h2>
+    {% if bandeiras.get(moeda) and bandeiras.get(moeda) != 'btc' %}
+        <span class="fi fi-{{ bandeiras.get(moeda) }}"></span>
+    {% else %}
+        ₿
+    {% endif %}
+    {{ moeda }} → BRL
+</h2>
             {% if dados.get('erro') %}
                 <p class="erro">Erro ao carregar</p>
             {% else %}
