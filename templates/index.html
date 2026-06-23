@@ -33,12 +33,7 @@
                 <p class="erro">Erro ao carregar</p>
             {% else %}
                 <p class="valor">R$ {{ "%.4f"|format(dados.valor) }}</p>
-                <p class="variacao {{ 'positivo' if dados.variacao >= 0 else 'negativo' }}">
-                    {{ "▲" if dados.variacao >= 0 else "▼" }}
-                    {{ "%.2f"|format(dados.variacao) }}%
-                </p>
-                <p class="detalhe">Alta: R$ {{ "%.4f"|format(dados.alta) }}</p>
-                <p class="detalhe">Baixa: R$ {{ "%.4f"|format(dados.baixa) }}</p>
+                <p class="detalhe">Atualizado: {{ dados.hora[:10] if dados.hora else '—' }}</p>
             {% endif %}
         </div>
         {% endfor %}
