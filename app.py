@@ -3,12 +3,11 @@ import requests
 
 app = Flask(__name__)
 
-MOEDAS = ["USD", "EUR", "BTC", "GBP", "JPY", "ARS"]
+MOEDAS = ["USD", "EUR", "GBP", "JPY", "ARS"]
 
 BANDEIRAS = {
     "USD": "us",
     "EUR": "eu",
-    "BTC": "btc",
     "GBP": "gb",
     "JPY": "jp",
     "ARS": "ar"
