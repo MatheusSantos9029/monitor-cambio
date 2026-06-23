@@ -1,5 +1,6 @@
 from flask import Flask, render_template, jsonify
 import requests
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -12,6 +13,8 @@ BANDEIRAS = {
     "JPY": "jp",
     "ARS": "ar"
 }
+
+historico = []
 
 def buscar_cotacoes():
     resultado = {}
@@ -37,6 +40,16 @@ def buscar_cotacoes():
     except Exception as e:
         for moeda in MOEDAS:
             resultado[moeda] = {"erro": str(e)}
+
+    # Salva no histórico
+    if any("valor" in v for v in resultado.values()):
+        historico.append({
+            "hora": datetime.now().strftime("%H:%M:%S"),
+            "cotacoes": {m: v["valor"] for m, v in resultado.items() if "valor" in v}
+        })
+        if len(historico) > 50:
+            historico.pop(0)
+
     return resultado
 
 @app.route("/")
@@ -48,10 +61,14 @@ def index():
 def api_cotacoes():
     return jsonify(buscar_cotacoes())
 
+@app.route("/api/historico")
+def api_historico():
+    return jsonify(historico)
+
 @app.route("/teste")
 def teste():
     try:
-        url = "https://economia.awesomeapi.com.br/json/last/USD-BRL"
+        url = "https://open.er-api.com/v6/latest/BRL"
         resposta = requests.get(url, timeout=10)
         return jsonify({"status": resposta.status_code, "dados": resposta.json()})
     except Exception as e:

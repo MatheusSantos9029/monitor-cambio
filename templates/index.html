@@ -78,9 +78,7 @@
             />
           </div>
         </div>
-
         <div class="conversor-seta">→</div>
-
         <div class="conversor-campo">
           <label>Moeda</label>
           <select id="moeda-destino" onchange="converter()">
@@ -91,7 +89,6 @@
             <option value="ARS">ARS</option>
           </select>
         </div>
-
         <div class="conversor-campo">
           <label>Resultado</label>
           <div class="conversor-resultado" id="resultado">—</div>
@@ -99,9 +96,15 @@
       </div>
     </div>
 
-    <div class="grafico-container">
-      <h2>Flutuação em tempo real</h2>
-      <canvas id="grafico"></canvas>
+    <div class="painel-inferior">
+      <div class="grafico-container">
+        <h2>Flutuação em tempo real</h2>
+        <canvas id="grafico"></canvas>
+      </div>
+      <div class="historico-container">
+        <h2>📋 Últimos Registros</h2>
+        <div id="historico-lista"></div>
+      </div>
     </div>
 
     <p class="hora" id="hora">Carregando...</p>
@@ -135,24 +138,18 @@
         },
         options: {
           responsive: true,
-          plugins: {
-            legend: { position: "top" },
-          },
-          scales: {
-            y: { beginAtZero: false },
-          },
+          plugins: { legend: { position: "top" } },
+          scales: { y: { beginAtZero: false } },
         },
       });
 
       function converter() {
         const valor = parseFloat(document.getElementById("valor-brl").value);
         const moeda = document.getElementById("moeda-destino").value;
-
         if (!valor || !cotacoesCache[moeda]) {
           document.getElementById("resultado").textContent = "—";
           return;
         }
-
         const convertido = valor / cotacoesCache[moeda];
         document.getElementById("resultado").textContent =
           `${convertido.toFixed(4)} ${moeda}`;
@@ -164,43 +161,63 @@
           `Atualizado às ${agora.toLocaleTimeString("pt-BR")}`;
       }
 
+      function renderizarHistorico(dados) {
+        const lista = document.getElementById("historico-lista");
+        lista.innerHTML = "";
+        const ultimos = dados.slice(-20).reverse();
+        for (const entrada of ultimos) {
+          const card = document.createElement("div");
+          card.className = "historico-card";
+          let linhas = `<div class="hist-hora">🕐 ${entrada.hora}</div>`;
+          for (const [moeda, valor] of Object.entries(entrada.cotacoes)) {
+            linhas += `<div class="hist-linha"><span>${moeda} → BRL</span><span>R$ ${valor.toFixed(4)}</span></div>`;
+          }
+          card.innerHTML = linhas;
+          lista.appendChild(card);
+        }
+      }
+
+      async function carregarHistorico() {
+        try {
+          const resposta = await fetch("/api/historico");
+          const dados = await resposta.json();
+          grafico.data.labels = [];
+          grafico.data.datasets[0].data = [];
+          grafico.data.datasets[1].data = [];
+          for (const entrada of dados) {
+            grafico.data.labels.push(entrada.hora);
+            grafico.data.datasets[0].data.push(entrada.cotacoes.USD);
+            grafico.data.datasets[1].data.push(entrada.cotacoes.EUR);
+          }
+          grafico.update();
+          renderizarHistorico(dados);
+        } catch (e) {
+          console.error("Erro ao carregar histórico:", e);
+        }
+      }
+
       async function atualizar() {
         try {
           const resposta = await fetch("/api/cotacoes");
           const dados = await resposta.json();
-          const agora = new Date().toLocaleTimeString("pt-BR");
-
-          if (grafico.data.labels.length > 20) {
-            grafico.data.labels.shift();
-            grafico.data.datasets[0].data.shift();
-            grafico.data.datasets[1].data.shift();
-          }
-
-          grafico.data.labels.push(agora);
-          grafico.data.datasets[0].data.push(dados.USD?.valor);
-          grafico.data.datasets[1].data.push(dados.EUR?.valor);
-          grafico.update();
 
           for (const [moeda, info] of Object.entries(dados)) {
             if (info.valor) cotacoesCache[moeda] = info.valor;
-
             const card = document.getElementById(`card-${moeda}`);
             if (card && info.valor) {
               card.querySelector(".valor").textContent =
                 `R$ ${info.valor.toFixed(4)}`;
-
-              // Verifica alertas
               const maxInput = document.getElementById(`alerta-max-${moeda}`);
               const minInput = document.getElementById(`alerta-min-${moeda}`);
               const max = parseFloat(maxInput?.value);
               const min = parseFloat(minInput?.value);
-              const valor = info.valor;
-
-              const alertaAtivo = (max && valor > max) || (min && valor < min);
+              const alertaAtivo =
+                (max && info.valor > max) || (min && info.valor < min);
               card.classList.toggle("alerta", alertaAtivo);
             }
           }
 
+          await carregarHistorico();
           atualizarHora();
         } catch (e) {
           console.error("Erro ao atualizar:", e);
@@ -214,6 +231,7 @@
       }
 
       let intervaloAtual;
+      carregarHistorico();
       atualizar();
       intervaloAtual = setInterval(atualizar, 30000);
     </script>

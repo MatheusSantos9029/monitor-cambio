@@ -247,3 +247,57 @@ h1 {
 .alerta-input input:focus {
     border-color: #3498db;
 }
+
+.painel-inferior {
+    display: flex;
+    gap: 20px;
+    max-width: 1200px;
+    margin: 0 auto 30px auto;
+    align-items: flex-start;
+}
+
+.painel-inferior .grafico-container {
+    flex: 2;
+    margin: 0;
+}
+
+.historico-container {
+    flex: 1;
+    background-color: #1e2130;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.historico-container h2 {
+    text-align: center;
+    font-size: 1rem;
+    color: #aaa;
+    margin-bottom: 15px;
+}
+
+.historico-card {
+    background-color: #0f1117;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+}
+
+.historico-card .hist-hora {
+    color: #3498db;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.historico-card .hist-linha {
+    color: #aaa;
+    display: flex;
+    justify-content: space-between;
+}
+
+.historico-card .hist-linha span {
+    color: #fff;
+}
