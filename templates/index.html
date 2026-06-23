@@ -1,137 +1,193 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Monitor de Câmbio</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/6.6.6/css/flag-icons.min.css"
+    />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <h1>💱 Monitor de Câmbio</h1>
-    <p class="subtitulo">Atualização automática a cada
-    <select id="intervalo" onchange="alterarIntervalo()">
+    <p class="subtitulo">
+      Atualização automática a cada
+      <select id="intervalo" onchange="alterarIntervalo()">
         <option value="30000">30 segundos</option>
         <option value="60000">1 minuto</option>
         <option value="300000">5 minutos</option>
-    </select>
+      </select>
     </p>
 
     <div class="cards">
-        {% for moeda, dados in cotacoes.items() %}
-        <div class="card" id="card-{{ moeda }}">
-            <h2>
-    {% if bandeiras.get(moeda) and bandeiras.get(moeda) != 'btc' %}
-        <span class="fi fi-{{ bandeiras.get(moeda) }}"></span>
-    {% else %}
-        ₿
-    {% endif %}
-    {{ moeda }} → BRL
-</h2>
-            {% if dados.get('erro') %}
-                <p class="erro">Erro ao carregar</p>
-            {% else %}
-                <p class="valor">R$ {{ "%.4f"|format(dados.valor) }}</p>
-                <p class="detalhe">Atualizado: {{ dados.hora[5:16] if dados.hora else '—' }}</p>
-            {% endif %}
+      {% for moeda, dados in cotacoes.items() %}
+      <div class="card" id="card-{{ moeda }}">
+        <h2>
+          {% if bandeiras.get(moeda) %}
+          <span class="fi fi-{{ bandeiras.get(moeda) }}"></span>
+          {% endif %} {{ moeda }} → BRL
+        </h2>
+        {% if dados.get('erro') %}
+        <p class="erro">Erro ao carregar</p>
+        {% else %}
+        <p class="valor">R$ {{ "%.4f"|format(dados.valor) }}</p>
+        <p class="detalhe">
+          Atualizado: {{ dados.hora[5:16] if dados.hora else '—' }}
+        </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="conversor-container">
+      <h2>💱 Conversor de Moedas</h2>
+      <div class="conversor">
+        <div class="conversor-campo">
+          <label>Valor em BRL</label>
+          <div class="conversor-input">
+            <span class="prefixo">R$</span>
+            <input
+              type="number"
+              id="valor-brl"
+              placeholder="0.00"
+              oninput="converter()"
+            />
+          </div>
         </div>
-        {% endfor %}
+
+        <div class="conversor-seta">→</div>
+
+        <div class="conversor-campo">
+          <label>Moeda</label>
+          <select id="moeda-destino" onchange="converter()">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+            <option value="ARS">ARS</option>
+          </select>
+        </div>
+
+        <div class="conversor-campo">
+          <label>Resultado</label>
+          <div class="conversor-resultado" id="resultado">—</div>
+        </div>
+      </div>
     </div>
 
     <div class="grafico-container">
-        <h2>Flutuação em tempo real</h2>
-        <canvas id="grafico"></canvas>
+      <h2>Flutuação em tempo real</h2>
+      <canvas id="grafico"></canvas>
     </div>
 
     <p class="hora" id="hora">Carregando...</p>
 
     <script>
-        const ctx = document.getElementById('grafico').getContext('2d');
-        const grafico = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: [],
-                datasets: [
-                    {
-                        label: 'USD → BRL',
-                        data: [],
-                        borderColor: '#3498db',
-                        backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    },
-                    {
-                        label: 'EUR → BRL',
-                        data: [],
-                        borderColor: '#e74c3c',
-                        backgroundColor: 'rgba(231, 76, 60, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }
-                ]
+      const cotacoesCache = {};
+
+      const ctx = document.getElementById("grafico").getContext("2d");
+      const grafico = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: [],
+          datasets: [
+            {
+              label: "USD → BRL",
+              data: [],
+              borderColor: "#3498db",
+              backgroundColor: "rgba(52, 152, 219, 0.1)",
+              tension: 0.4,
+              fill: true,
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: { position: 'top' }
-                },
-                scales: {
-                    y: { beginAtZero: false }
-                }
-            }
-        });
+            {
+              label: "EUR → BRL",
+              data: [],
+              borderColor: "#e74c3c",
+              backgroundColor: "rgba(231, 76, 60, 0.1)",
+              tension: 0.4,
+              fill: true,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "top" },
+          },
+          scales: {
+            y: { beginAtZero: false },
+          },
+        },
+      });
 
-        function atualizarHora() {
-            const agora = new Date();
-            document.getElementById('hora').textContent =
-                `Atualizado às ${agora.toLocaleTimeString('pt-BR')}`;
+      function converter() {
+        const valor = parseFloat(document.getElementById("valor-brl").value);
+        const moeda = document.getElementById("moeda-destino").value;
+
+        if (!valor || !cotacoesCache[moeda]) {
+          document.getElementById("resultado").textContent = "—";
+          return;
         }
 
-        async function atualizar() {
-            try {
-                const resposta = await fetch('/api/cotacoes');
-                const dados = await resposta.json();
-                const agora = new Date().toLocaleTimeString('pt-BR');
+        const convertido = valor / cotacoesCache[moeda];
+        document.getElementById("resultado").textContent =
+          `${convertido.toFixed(4)} ${moeda}`;
+      }
 
-                if (grafico.data.labels.length > 20) {
-                    grafico.data.labels.shift();
-                    grafico.data.datasets[0].data.shift();
-                    grafico.data.datasets[1].data.shift();
-                }
+      function atualizarHora() {
+        const agora = new Date();
+        document.getElementById("hora").textContent =
+          `Atualizado às ${agora.toLocaleTimeString("pt-BR")}`;
+      }
 
-                grafico.data.labels.push(agora);
-                grafico.data.datasets[0].data.push(dados.USD?.valor);
-                grafico.data.datasets[1].data.push(dados.EUR?.valor);
-                grafico.update();
+      async function atualizar() {
+        try {
+          const resposta = await fetch("/api/cotacoes");
+          const dados = await resposta.json();
+          const agora = new Date().toLocaleTimeString("pt-BR");
 
-                // Atualiza cards
-                for (const [moeda, info] of Object.entries(dados)) {
-                    const card = document.getElementById(`card-${moeda}`);
-                    if (card && info.valor) {
-                        card.querySelector('.valor').textContent = `R$ ${info.valor.toFixed(4)}`;
-                        const varEl = card.querySelector('.variacao');
-                        varEl.textContent = `${info.variacao >= 0 ? '▲' : '▼'} ${Math.abs(info.variacao).toFixed(2)}%`;
-                        varEl.className = `variacao ${info.variacao >= 0 ? 'positivo' : 'negativo'}`;
-                    }
-                }
+          if (grafico.data.labels.length > 20) {
+            grafico.data.labels.shift();
+            grafico.data.datasets[0].data.shift();
+            grafico.data.datasets[1].data.shift();
+          }
 
-                atualizarHora();
-            } catch (e) {
-                console.error('Erro ao atualizar:', e);
+          grafico.data.labels.push(agora);
+          grafico.data.datasets[0].data.push(dados.USD?.valor);
+          grafico.data.datasets[1].data.push(dados.EUR?.valor);
+          grafico.update();
+
+          for (const [moeda, info] of Object.entries(dados)) {
+            if (info.valor) cotacoesCache[moeda] = info.valor;
+
+            const card = document.getElementById(`card-${moeda}`);
+            if (card && info.valor) {
+              card.querySelector(".valor").textContent =
+                `R$ ${info.valor.toFixed(4)}`;
             }
+          }
+
+          atualizarHora();
+        } catch (e) {
+          console.error("Erro ao atualizar:", e);
         }
+      }
 
-        let intervaloAtual;
+      function alterarIntervalo() {
+        const valor = parseInt(document.getElementById("intervalo").value);
+        clearInterval(intervaloAtual);
+        intervaloAtual = setInterval(atualizar, valor);
+      }
 
-function alterarIntervalo() {
-    const valor = parseInt(document.getElementById('intervalo').value);
-    clearInterval(intervaloAtual);
-    intervaloAtual = setInterval(atualizar, valor);
-}
-
-atualizar();
-intervaloAtual = setInterval(atualizar, 30000);
+      let intervaloAtual;
+      atualizar();
+      intervaloAtual = setInterval(atualizar, 30000);
     </script>
-</body>
+  </body>
 </html>
