@@ -40,6 +40,24 @@
         <p class="detalhe">
           Atualizado: {{ dados.hora[5:16] if dados.hora else '—' }}
         </p>
+        <div class="alerta-input">
+          <label>Alertar acima de</label>
+          <input
+            type="number"
+            placeholder="R$ máximo"
+            id="alerta-max-{{ moeda }}"
+            step="0.01"
+          />
+        </div>
+        <div class="alerta-input">
+          <label>Alertar abaixo de</label>
+          <input
+            type="number"
+            placeholder="R$ mínimo"
+            id="alerta-min-{{ moeda }}"
+            step="0.01"
+          />
+        </div>
         {% endif %}
       </div>
       {% endfor %}
@@ -170,6 +188,16 @@
             if (card && info.valor) {
               card.querySelector(".valor").textContent =
                 `R$ ${info.valor.toFixed(4)}`;
+
+              // Verifica alertas
+              const maxInput = document.getElementById(`alerta-max-${moeda}`);
+              const minInput = document.getElementById(`alerta-min-${moeda}`);
+              const max = parseFloat(maxInput?.value);
+              const min = parseFloat(minInput?.value);
+              const valor = info.valor;
+
+              const alertaAtivo = (max && valor > max) || (min && valor < min);
+              card.classList.toggle("alerta", alertaAtivo);
             }
           }
 

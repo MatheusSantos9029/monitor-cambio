@@ -209,3 +209,41 @@ h1 {
     min-width: 160px;
     text-align: center;
 }
+
+@keyframes piscar {
+    0%, 100% { box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.8); }
+}
+
+.card.alerta {
+    animation: piscar 1s infinite;
+}
+
+.alerta-input {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.alerta-input label {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.alerta-input input {
+    background-color: #0f1117;
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: #aaa;
+    font-size: 0.85rem;
+    padding: 5px 8px;
+    width: 100%;
+    outline: none;
+}
+
+.alerta-input input:focus {
+    border-color: #3498db;
+}
